@@ -24,7 +24,7 @@ void pcapngToCsv::fileClose(){
     inputStream.close();
 }
 
-void pcapngToCsv::readFileHeader(){
+void pcapngToCsv::readFileHeader()
 	if (!inputStream.is_open() ){
 		assert(0);	
 	}

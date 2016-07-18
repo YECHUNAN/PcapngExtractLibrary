@@ -30,11 +30,9 @@ class pcapngToCsv{
 	unsigned short minorVersion;
 	unsigned short linkType;
 	std::ifstream inputStream;
-
 	void fileOpen(const char* filename);
 	void setOffset(int x);
-	void readFileHeader();
-	int readFileContent();
+	void readFile();	
 	void fileClose();
 	void printInfo();
 	void printblock(unsigned int blockType, unsigned int blockLen);
