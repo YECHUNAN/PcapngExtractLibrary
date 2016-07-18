@@ -4,8 +4,7 @@ Problem 1: Still struggling with efficient methods of reading optional data with
 
 Problem 2: Why do I get different timestamp from the same pcapng file each time?
 
-&#160; &#160; &#160; &#160; Solution: Have fixed a ifstream bug. When placed as the first member variable of the pcapngToCsv class, its input(read) operation will corrupt the other member variables of the class.
-Define it as the last member solves this problem.
+&#160; &#160; &#160; &#160; Solution: Have fixed a ifstream bug. When placed as the first member variable of the pcapngToCsv class, its input(read) operation will corrupt the other member variables of the class. Define it as the last member solves this problem.
 
 Problem 3: How to deal with the difference in endianess?
 
