@@ -22,7 +22,7 @@ PROJECTFILE = pcapngToCsv.cpp
 
 
 #Default Flags
-CXXFLAGS = -std=c++11 -Wall -Werror -Wextra -pedantic 
+CXXFLAGS = -std=c++11 -Wall -Wextra -pedantic 
 
 # highest target; sews together all objects into executable
 all: $(EXECUTABLE)

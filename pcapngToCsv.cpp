@@ -11,9 +11,12 @@ int main() {
 	pcapngToCsv pcapngToCsv_Impl;
     char filename[20] = "./test.pcapng";
 	pcapngToCsv_Impl.fileOpen(filename);
-	//return 0;	
+	
 	pcapngToCsv_Impl.readFileHeader();
-	pcapngToCsv_Impl.readFileContent();
+	while ( 0 == pcapngToCsv_Impl.readFileContent() ){
+		cout<<"----------------------\n";
+	}
+	
 	pcapngToCsv_Impl.fileClose();
 	
 	return 0;

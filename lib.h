@@ -11,7 +11,7 @@ class pcapngToCsv{
 	public:
     
 	
-	long long sectionLen;
+	unsigned long long sectionLen;
 	unsigned int byteOrderMagic;	
 	char *hardWare;
 	char *os;
@@ -21,14 +21,15 @@ class pcapngToCsv{
 	char *macAddr;
 	unsigned interfaceId;
 	unsigned int snapLen;
-	unsigned int timeHigh;
-	unsigned int timeLow;
+	unsigned int timeS;
+	unsigned int timeUS;
 	unsigned int capLen;
 	unsigned int packLen;
-	char *packContent;
+	char packContent[65535];
 	unsigned short majorVersion;
 	unsigned short minorVersion;
 	unsigned short linkType;
+	bool ispcapng;
 	std::ifstream inputStream;
 
 	void fileOpen(const char* filename);

@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <cassert>
 #include <cstring>
+#include "stdio.h"
 
 using std::ifstream;
 using std::cout;
@@ -12,6 +13,30 @@ using std::hex;
 void pcapngToCsv::fileOpen(const char* filename){
 	//open an input pcapng file
     inputStream.open(filename, std::ifstream::binary);
+	int len = strlen(filename);	
+	if ( len<=5 ){
+		// can't be a .pcap/.pcapng file
+		assert(0);
+	}else if ( len<=7 ){
+		//can't be a .pcapng file
+		char cmp[5] = "pcap";
+		if ( memcmp( (filename+len-4), cmp, 4) == 0 ){
+			ispcapng = false;
+		}else{
+			// not a .pcap file
+			assert(0);
+		}
+	}else {
+		char cmp[7] = "pcapng";
+		if ( memcmp( (filename+len-6), cmp, 6) == 0 ){
+			ispcapng = true;
+		}else if (memcmp( (filename+len-4), cmp, 4) == 0){
+			ispcapng = false;
+		}else{
+			// not a .pcap file
+			assert(0);
+		}
+	}
 }
 
 void pcapngToCsv::setOffset(int x){
@@ -28,58 +53,86 @@ void pcapngToCsv::readFileHeader(){
 	if (!inputStream.is_open() ){
 		assert(0);	
 	}
-	unsigned int blockType=0;
-	unsigned int blockLen=0;
+	if (ispcapng){
+		unsigned int blockType=0;
+		unsigned int blockLen=0;
+		inputStream.seekg(0, inputStream.beg);
+		//read in the section header block
+		//currently skipping the optional part 
+		inputStream.read((char*)&blockType, 4);
+		assert(blockType == secHeaderBlock);
+		inputStream.read((char*)&blockLen, 4);
 
-
-	inputStream.seekg(0, inputStream.beg);
-	//read in the section header block
-	//currently skipping the optional part 
-	inputStream.read((char*)&blockType, 4);
-	assert(blockType == secHeaderBlock);
-	inputStream.read((char*)&blockLen, 4);
-
-	inputStream.read((char*)&byteOrderMagic, 4);
-	inputStream.read((char*)&majorVersion, 2);
-	inputStream.read((char*)&minorVersion, 2);
-	inputStream.read((char*)&sectionLen, 8);
-	setOffset(blockLen-24);
+		inputStream.read((char*)&byteOrderMagic, 4);
+		inputStream.read((char*)&majorVersion, 2);
+		inputStream.read((char*)&minorVersion, 2);
+		inputStream.read((char*)&sectionLen, 8);
+		setOffset(blockLen-24);
 	
-	//read in the interface description block
-	//currently skipping the optional part
-	inputStream.read((char*)&blockType, 4);
-	assert( blockType == intfaceDscrpBlock);
-	inputStream.read((char*)&blockLen, 4);
+		//read in the interface description block
+		//currently skipping the optional part
+		inputStream.read((char*)&blockType, 4);
+		assert( blockType == intfaceDscrpBlock);
+		inputStream.read((char*)&blockLen, 4);
 
-
-	inputStream.read((char*)&linkType, 2);
-	setOffset(2);
-	inputStream.read((char*)&snapLen, 4);
-	setOffset(blockLen-16);
+		inputStream.read((char*)&linkType, 2);
+		setOffset(2);
+		inputStream.read((char*)&snapLen, 4);
+		setOffset(blockLen-16);
+	}else{
+		inputStream.seekg(0, inputStream.beg);
+		inputStream.read((char*) &byteOrderMagic, 4);
+		inputStream.read((char*) &majorVersion, 4);
+		inputStream.read((char*) &minorVersion, 4);
+		setOffset(8);
+		inputStream.read((char*) &snapLen, 4);
+		inputStream.read((char*) &linkType, 4);
+	}
 }	
 
 int pcapngToCsv::readFileContent(){
 	//read in enhanced packet block
 	//add selection of ehanced, simple and obsolete packet types later
 	//currently skipping the optional part
-	unsigned int blockType=0;
-	unsigned int blockLen=0;
-	inputStream.read((char*)&blockType, 4);
-	assert(blockType==enhancedPackBlock);
-	inputStream.read((char*)&blockLen, 4);
-	if (blockType!=6){
-		return -1;
-	}
+	if (ispcapng){
+		// this input file is .pcapng file
+		unsigned int blockType=0;
+		unsigned int blockLen=0;
+		inputStream.read((char*)&blockType, 4);
+		//assert(blockType==enhancedPackBlock);
+		inputStream.read((char*)&blockLen, 4);
+		if (blockType!=6){
+			return -1;
+		}
 
-	inputStream.read((char*)&interfaceId, 4);
-	inputStream.read((char*)&timeHigh, 4);
-	inputStream.read((char*)&timeLow, 4);
-	inputStream.read((char*)&capLen, 4);
-	inputStream.read((char*)&packLen, 4);
-	packContent = new char[capLen+1];
-	memset(packContent, 0, capLen+1);
-	inputStream.read(packContent, capLen);
-	setOffset(blockLen-28-capLen );	
+		inputStream.read((char*)&interfaceId, 4);
+		unsigned int timeHigh, timeLow;
+		inputStream.read((char*)&timeHigh, 4);
+		inputStream.read((char*)&timeLow, 4);
+		long long t = timeHigh<<32;
+		long long unit = 1000000;
+		t = t + (long long)timeLow;
+		timeS = t / unit;
+		timeUS = t % unit;
+		inputStream.read((char*)&capLen, 4);
+		inputStream.read((char*)&packLen, 4);
+		memset(packContent, 0, sizeof(packContent) );
+		inputStream.read(packContent, capLen);
+		setOffset(blockLen-28-capLen );	
+		printInfo();
+	}else{
+		// the input file is .pcap file
+		inputStream.read((char*) &timeS, 4);
+		if (inputStream.fail() ){
+			return -1;
+		}
+		inputStream.read((char*) &timeUS, 4);
+		inputStream.read((char*) &capLen, 4);
+		inputStream.read((char*) &packLen, 4);
+		
+		memset(packContent, 0, sizeof(packContent) );
+		inputStream.read(packContent, capLen);
+	}
 	return 0;
 }
 
@@ -88,8 +141,8 @@ void pcapngToCsv::printInfo(){
 	cout<<"section length = "<<hex<<sectionLen<<endl;
 	cout<<"byteOrderMagic = "<<byteOrderMagic<<endl;
 	cout<<"interfaceId = "<<interfaceId<<endl;
-	cout<<"timeHigh = "<<timeHigh<<endl;
-	cout<<"timeLow = "<<timeLow<<endl;
+	cout<<"timeS = "<<timeS<<endl;
+	cout<<"timeUS = "<<timeUS<<endl;
 	cout<<"capLen = "<<capLen<<endl;
 	cout<<"packLen = "<<packLen<<endl;
 }
@@ -100,9 +153,26 @@ void pcapngToCsv::printblock(unsigned int blockType, unsigned int blockLen){
 	cout<<endl;
 }
 	pcapngToCsv::pcapngToCsv(){
-		packContent = nullptr;
+		sectionLen = 0;
+		byteOrderMagic = 0;
+		hardWare = nullptr;
+		os = nullptr;
+		userappl = nullptr;
+		name = nullptr;
+		ipAddr = nullptr;
+		macAddr = nullptr;
+		interfaceId = 0;
+		snapLen = 0;
+		timeS = 0;
+		timeUS = 0;
+		capLen = 0;
+		packLen = 0;
+		majorVersion = 0;
+		minorVersion = 0;
+		linkType = 0;
+		ispcapng = false;
 	}
 
 	pcapngToCsv::~pcapngToCsv(){
-		delete[] packContent;
+		
 	}
