@@ -11,7 +11,7 @@ class pcapngToCsv{
 	public:
     
 	
-	long long sectionLen;
+	unsigned long long sectionLen;
 	unsigned int byteOrderMagic;	
 	char *hardWare;
 	char *os;
@@ -25,14 +25,17 @@ class pcapngToCsv{
 	unsigned int timeLow;
 	unsigned int capLen;
 	unsigned int packLen;
-	char *packContent;
+	char packContent[65535];
 	unsigned short majorVersion;
 	unsigned short minorVersion;
 	unsigned short linkType;
+	bool ispcapng;
 	std::ifstream inputStream;
+
 	void fileOpen(const char* filename);
 	void setOffset(int x);
-	void readFile();	
+	void readFileHeader();
+	int readFileContent();
 	void fileClose();
 	void printInfo();
 	void printblock(unsigned int blockType, unsigned int blockLen);
