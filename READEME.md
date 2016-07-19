@@ -11,3 +11,7 @@ Problem 2 solution: Have fixed a ifstream bug. When placed as the first member v
 Problem 3: How to deal with the difference in endianess?
 
 Problem 3 solution: by checking the order of the magic byte. We can tell whether the machine is big endian or small endian.
+
+Updated new features:
+      Add support for the legacy .pcapng format.
+      Encapsulate the timestamp extract method inside the class method (in seconds and miliseconds)
